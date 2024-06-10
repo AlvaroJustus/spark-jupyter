@@ -90,10 +90,11 @@ To add another worker, copy the spark-worker-2 service and update the service na
     volumes:
       - ./jars:/opt/bitnami/spark/jars
 ```
-## Changing Worker Memory and Cores
+### Changing Worker Memory and Cores
 Adjust the environment variables `SPARK_WORKER_MEMORY` and `SPARK_WORKER_CORES` for each worker service in the docker-compose.yml file.
 
-**Example Spark Application**\
+
+## Examples
 You can run Spark applications using the Jupyter Notebook. Here is an example of a simple Spark job:
 ```python
 from pyspark.sql import SparkSession
@@ -120,11 +121,11 @@ df.show()
 df_grouped = df.groupBy("Age").count()
 df_grouped.show()
 ```
-## Using Spark Measure
+### Using Spark Measure
 
 Spark Measure is a tool for measuring and profiling Spark jobs. It can be used to collect metrics and provide insights into the performance of your Spark applications.
 
-### Example Usage
+#### Example Usage
 
 To use Spark Measure in your Jupyter Notebook, you can follow these steps:
 
