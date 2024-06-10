@@ -1,61 +1,96 @@
 version: '3'
 services:
   spark-master:
-    image: bitnami/spark:latest
+    image: bitnami/spark:3.5.0
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
+      - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
     ports:
       - "8080:8080"
-      - "7077:7077" 
-      - "6066:6066" 
+      - "7077:7077"
+      - "6066:6066"
     networks:
       - spark-network
 
   spark-worker-1:
-    image: bitnami/spark:latest
+    image: bitnami/spark:3.5.0
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
       - SPARK_WORKER_MEMORY=2G
       - SPARK_WORKER_CORES=2
+      - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
     depends_on:
       - spark-master
     networks:
       - spark-network
 
   spark-worker-2:
-    image: bitnami/spark:latest
+    image: bitnami/spark:3.5.0
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
       - SPARK_WORKER_MEMORY=4G
       - SPARK_WORKER_CORES=4
+      - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
+    depends_on:
+      - spark-master
+    networks:
+      - spark-network
+
+  history-server:
+    image: bitnami/spark:3.5.0
+    container_name: spark-history-server
+    environment:
+      - SPARK_MODE=history-server
+      - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/opt/bitnami/spark/logs
+      - SPARK_HISTORY_FS_UPDATE_INTERVAL=10s
+      - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
+    ports:
+      - '18080:18080'
+    volumes:
+      - ./logs:/opt/bitnami/spark/logs
     depends_on:
       - spark-master
     networks:
       - spark-network
 
   jupyter:
-    image: jupyter/pyspark-notebook:latest
+    image: jupyter/pyspark-notebook:spark-3.5.0
     environment:
-      - PYSPARK_MASTER=spark://spark-master:7077
+      - PYSPARK_PYTHON=/opt/bitnami/python/bin/python
+      - PYSPARK_DRIVER_PYTHON=jupyter
+      - PYSPARK_DRIVER_PYTHON_OPTS="notebook --ip='*' --port=8888 --no-browser --allow-root"
       - SPARK_HOME=/usr/local/spark
-      - PATH=$SPARK_HOME/bin:$PATH
+      - JUPYTER_ENABLE_LAB=yes
+      - SPARK_USER=spark
+      - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
     ports:
       - "8888:8888"
     volumes:
       - ./notebooks:/home/jovyan/work
+      - ./logs:/home/jovyan/work/logs
     networks:
       - spark-network
     depends_on:
       - spark-master
       - spark-worker-1
       - spark-worker-2
+    command: >
+      bash -c "
+      mkdir -p /home/jovyan/jars &&
+      wget -O /home/jovyan/jars/spark-measure_2.12-0.24.jar https://repo1.maven.org/maven2/ch/cern/sparkmeasure/spark-measure_2.12/0.24/spark-measure_2.12-0.24.jar &&
+      pip install --no-cache-dir findspark sparkmeasure &&
+      start-notebook.sh
+      "
 
 networks:
   spark-network:
     driver: bridge
+
+volumes:
+  spark-worker-data:
