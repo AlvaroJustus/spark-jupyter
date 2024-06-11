@@ -13,6 +13,8 @@ services:
       - "8080:8080"
       - "7077:7077"
       - "6066:6066"
+    volumes:
+      - ./work:/work
     networks:
       - spark-network
 
@@ -21,11 +23,13 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=5G
+      - SPARK_WORKER_CORES=4
       - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
     depends_on:
       - spark-master
+    volumes:
+      - ./work:/work
     networks:
       - spark-network
 
@@ -34,28 +38,13 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_MEMORY=5G
       - SPARK_WORKER_CORES=4
       - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
     depends_on:
       - spark-master
-    networks:
-      - spark-network
-
-  history-server:
-    image: bitnami/spark:3.5.0
-    container_name: spark-history-server
-    environment:
-      - SPARK_MODE=history-server
-      - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/opt/bitnami/spark/logs
-      - SPARK_HISTORY_FS_UPDATE_INTERVAL=10s
-      - SPARK_EXTRA_CLASSPATH=/opt/bitnami/spark/jars/spark-measure_2.13-0.24.jar
-    ports:
-      - '18080:18080'
     volumes:
-      - ./logs:/opt/bitnami/spark/logs
-    depends_on:
-      - spark-master
+      - ./work:/work
     networks:
       - spark-network
 
@@ -88,9 +77,39 @@ services:
       start-notebook.sh
       "
 
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CLUSTER_NAME=hadoop
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_replication=1
+    ports:
+      - "9870:9870"
+      - "8020:8020"
+    volumes:
+      - namenode:/hadoop/dfs/name
+    networks:
+      - spark-network
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CLUSTER_NAME=hadoop
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_permissions_enabled=false
+    volumes:
+      - datanode:/hadoop/dfs/data
+    networks:
+      - spark-network
+    depends_on:
+      - namenode
+
 networks:
   spark-network:
     driver: bridge
 
 volumes:
   spark-worker-data:
+  namenode:
+  datanode:
