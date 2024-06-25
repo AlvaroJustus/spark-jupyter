@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<configuration>
+    <property>
+        <name>dfs.client.rpc.max-size</name>
+        <value>2147483648</value>
+    </property>
+</configuration
