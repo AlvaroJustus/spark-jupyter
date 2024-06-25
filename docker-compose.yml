@@ -16,6 +16,7 @@ services:
       - "6066:6066"
     volumes:
       - ./work:/work
+      - shared-workspace:/opt/workspace
     networks:
       - spark-network
 
@@ -30,8 +31,11 @@ services:
       - HADOOP_USER_NAME=spark
     depends_on:
       - spark-master
+    ports:
+      - "8081:8081"
     volumes:
       - ./work:/work
+      - shared-workspace:/opt/workspace
     networks:
       - spark-network
 
@@ -46,8 +50,11 @@ services:
       - HADOOP_USER_NAME=spark
     depends_on:
       - spark-master
+    ports:
+      - "8082:8081"
     volumes:
       - ./work:/work
+      - shared-workspace:/opt/workspace
     networks:
       - spark-network
 
@@ -67,6 +74,7 @@ services:
     volumes:
       - ./notebooks:/home/jovyan/work
       - ./logs:/home/jovyan/work/logs
+      - shared-workspace:/opt/workspace
     networks:
       - spark-network
     depends_on:
@@ -93,6 +101,7 @@ services:
     volumes:
       - namenode:/hadoop/dfs/name
       - ./hadoop-config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - shared-workspace:/opt/workspace
     networks:
       - spark-network
 
@@ -105,6 +114,7 @@ services:
       - HDFS_CONF_dfs_permissions_enabled=false
     volumes:
       - datanode:/hadoop/dfs/data
+      - shared-workspace:/opt/workspace
     networks:
       - spark-network
     depends_on:
@@ -115,6 +125,9 @@ networks:
     driver: bridge
 
 volumes:
+  shared-workspace:
+    name: "hadoop-distributed-file-system"
+    driver: local
   spark-worker-data:
   namenode:
   datanode:
